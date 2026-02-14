@@ -52,7 +52,7 @@ canvas{
   inset:0;
   display:grid;
   place-items:center;
-  padding:18px;
+  padding:0px;
   background: radial-gradient(900px 600px at 50% 30%, rgba(122,240,183,.12), transparent 60%),
               rgba(0,0,0,.35);
 }
