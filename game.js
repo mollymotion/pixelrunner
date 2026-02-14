@@ -48,6 +48,7 @@
   const btnCloseLeaderboard = document.getElementById('btnCloseLeaderboard');
 
   let highScore = 0;  // Highest score achieved so far (session)
+  let leaderboardScores = [];  // Store fetched leaderboard scores
 
   const hasMultEl = !!elMult;
 
@@ -386,6 +387,7 @@
 
   async function updateLeaderboard(){
     const scores = await fetchLeaderboard();
+    leaderboardScores = scores;  // store for checking if player made top 5
     renderLeaderboard(scores);
   }
 
@@ -396,9 +398,12 @@
 
     const finalScore = calculateScore();
 
-    // Check if this is a high score
-    if (finalScore > highScore){
-      highScore = finalScore;
+    // Check if score qualifies for leaderboard (top 5)
+    const qualifiesForLeaderboard = 
+      leaderboardScores.length < 5 || 
+      finalScore > leaderboardScores[leaderboardScores.length - 1].score;
+
+    if (qualifiesForLeaderboard){
       setOverlay('dead');
       elSub.textContent = `${reason} You made it ${Math.floor(totalDist)}m.`;
       setTimeout(() => {
