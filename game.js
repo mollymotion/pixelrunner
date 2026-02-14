@@ -136,6 +136,7 @@
   // Per-run state
   let speed = BASE_SPEED;
   let speedMax = BASE_SPEED_MAX;  // will scale over time
+  let dashOffset = 0;  // accumulated dash movement
 
   // input
   let isDown = false;
@@ -247,6 +248,7 @@
 
     // Run state
     speed = BASE_SPEED;
+    dashOffset = 0;
     runTime = 0;
 
     // timers
@@ -565,6 +567,7 @@
     runTime += dt;
     speedMax = BASE_SPEED_MAX + (runTime * 20);  // speed increases over time
     speed = clamp(speed + dt * SPEED_RAMP_PER_SEC, 0, speedMax);
+    dashOffset += speed * dt;  // accumulate dash movement same as boxes
 
     // meters
     const mThisFrame = (speed * dt) / 18;
@@ -850,8 +853,13 @@
     pxRect(0, GROUND_Y, W, H-GROUND_Y, '#15183a');
     pxRect(0, GROUND_Y, W, 4, '#23285c');
 
-    for (let i=0;i<40;i++){
-      const x = ((i*26) - (t*speed*0.9)) % (W+26) - 26;
+    const dashSpacing = 26;
+    const offset = dashOffset;
+    const startDash = Math.floor(offset / dashSpacing) - 1;
+    const endDash = startDash + Math.ceil((W + dashSpacing * 2) / dashSpacing);
+    
+    for (let i = startDash; i <= endDash; i++) {
+      const x = (i * dashSpacing - offset);
       pxRect(x, GROUND_Y+14, 16, 6, 'rgba(238,241,255,.06)');
     }
 
