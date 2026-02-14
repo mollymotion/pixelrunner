@@ -1,6 +1,18 @@
 (() => {
   'use strict';
 
+  // Supabase configuration
+  const SUPABASE_URL = 'https://lxguvmvmitblitbjuxvq.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_NX-HtPFGl875xjUueJUU5w_B6KJX5sH';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Bad words list (curated for family-friendly gaming)
+  const BAD_WORDS = new Set([
+    'ass', 'bad', 'bum', 'crap', 'damn', 'dick', 'dumb', 'fag', 'fart', 'fatty',
+    'gay', 'hell', 'suck', 'tit', 'wank', 'whore', 'boob', 'bust', 'cunt', 'damn',
+    'fuck', 'gag', 'gay', 'ginger', 'slut', 'twat', 'wimp', 'cock', 'piss', 'shit'
+  ]);
+
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha: false });
   const W = canvas.width;
@@ -8,6 +20,7 @@
 
   // HUD
   const elScore = document.getElementById('scorePts'); // boxes smashed
+  const elScoreTotal = document.getElementById('scoreTotal'); // total score
   const elDist = document.getElementById('score');   // meters
   const elCoins = document.getElementById('coins');
   const elMult  = document.getElementById('mult');
@@ -19,6 +32,20 @@
   const btnResume = document.getElementById('btnResume');
   const btnMute = document.getElementById('btnMute');
   const elSub = document.getElementById('sub');
+
+  // Leaderboard modal elements
+  const leaderboardModal = document.getElementById('leaderboardModal');
+  const leaderboardInput = document.getElementById('leaderboardInput');
+  const leaderboardScore = document.getElementById('leaderboardScore');
+  const leaderboardError = document.getElementById('leaderboardError');
+  const btnSubmitScore = document.getElementById('btnSubmitScore');
+  const btnSkipScore = document.getElementById('btnSkipScore');
+
+  // Leaderboard display
+  const leaderboardDisplay = document.getElementById('leaderboardDisplay');
+  const leaderboardList = document.getElementById('leaderboardList');
+
+  let highScore = 0;  // Highest score achieved so far (session)
 
   const hasMultEl = !!elMult;
 
@@ -91,10 +118,18 @@
   // Run stats
   let totalDist = 0;     // total meters across the run
   let coins = 0;
-  let boxesSmashed = 0;  // score is primarily boxes smashed
+  let boxesSmashed = 0;  // boxes smashed
   let streak = 0;
   let mult = 1.0;
   let runTime = 0;       // total time elapsed in run
+
+  // Calculate total score from all metrics
+  function calculateScore(){
+    const coinPoints = coins * 100;
+    const boxPoints = boxesSmashed * 50;
+    const distPoints = Math.floor(totalDist * 2);
+    return coinPoints + boxPoints + distPoints;
+  }
 
   // Per-run state
   let speed = BASE_SPEED;
@@ -238,12 +273,130 @@
     requestAnimationFrame(loop);
   }
 
+  // Leaderboard functions
+  function validateName(name){
+    const trimmed = name.trim().toUpperCase();
+    const errors = [];
+
+    if (trimmed.length < 3) errors.push('Name must be at least 3 characters.');
+    if (trimmed.length > 5) errors.push('Name must be 5 characters or less.');
+    if (!/^[A-Z]+$/.test(trimmed)) errors.push('Name must contain only letters.');
+
+    // Check for bad words
+    const words = trimmed.split(/\s+/);
+    for (const word of words){
+      if (BAD_WORDS.has(word)){
+        errors.push(`"${word}" is not allowed. Please choose a different name.`);
+        break;
+      }
+    }
+
+    return { valid: errors.length === 0, errors, name: trimmed };
+  }
+
+  function showLeaderboardModal(score){
+    leaderboardInput.value = '';
+    leaderboardError.classList.add('hidden');
+    leaderboardScore.textContent = score;
+    leaderboardModal.classList.remove('hidden');
+    leaderboardInput.focus();
+  }
+
+  function hideLeaderboardModal(){
+    leaderboardModal.classList.add('hidden');
+  }
+
+  async function submitScore(name, score){
+    try {
+      await supabase.from('leaderboard').insert({
+        name: name,
+        score: score,
+        boxes_smashed: boxesSmashed,
+        coins_collected: coins,
+        distance_meters: Math.floor(totalDist)
+      });
+      return { success: true };
+    } catch (err){
+      return { success: false, error: err.message };
+    }
+  }
+
+  async function fetchHighScore(){
+    try {
+      const { data, error } = await supabase
+        .from('leaderboard')
+        .select('score')
+        .order('score', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      return data && data.length > 0 ? data[0].score : 0;
+    } catch (err){
+      console.error('Error fetching high score:', err);
+      return 0;
+    }
+  }
+
+  async function fetchLeaderboard(){
+    try {
+      const { data, error } = await supabase
+        .from('leaderboard')
+        .select('name, score')
+        .order('score', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data || [];
+    } catch (err){
+      console.error('Error fetching leaderboard:', err);
+      return [];
+    }
+  }
+
+  function renderLeaderboard(scores){
+    leaderboardList.innerHTML = '';
+    if (scores.length === 0){
+      leaderboardList.innerHTML = '<div style="text-align:center;color:rgba(238,241,255,.5);">No scores yet. Be first!</div>';
+      return;
+    }
+
+    scores.forEach((entry, index) => {
+      const entryEl = document.createElement('div');
+      entryEl.className = 'leaderboard-entry';
+      entryEl.innerHTML = `
+        <span class="leaderboard-rank">#${index + 1}</span>
+        <span class="leaderboard-name">${entry.name}</span>
+        <span class="leaderboard-score">${entry.score}</span>
+      `;
+      leaderboardList.appendChild(entryEl);
+    });
+  }
+
+  async function updateLeaderboard(){
+    const scores = await fetchLeaderboard();
+    renderLeaderboard(scores);
+  }
+
   function die(reason){
     running = false;
     gameOver = true;
     betweenLevels = true;
-    setOverlay('dead');
-    elSub.textContent = `${reason} You made it ${Math.floor(totalDist)}m. Tap Start to try again.`;
+
+    const finalScore = calculateScore();
+
+    // Check if this is a high score
+    if (finalScore > highScore){
+      highScore = finalScore;
+      setOverlay('dead');
+      elSub.textContent = `${reason} You made it ${Math.floor(totalDist)}m.`;
+      setTimeout(() => {
+        showLeaderboardModal(finalScore);
+      }, 500);
+    } else {
+      setOverlay('dead');
+      elSub.textContent = `${reason} You made it ${Math.floor(totalDist)}m. Tap Start to try again.`;
+    }
+
     beep(160, 0.12, 'sawtooth', 0.09);
   }
 
@@ -298,6 +451,11 @@
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp'){ e.preventDefault(); onDown(); }
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight'){
+      e.preventDefault();
+      if (running) setPaused(true);
+      else if (paused) setPaused(false);
+    }
   });
   window.addEventListener('keyup', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp'){ e.preventDefault(); onUp(); }
@@ -321,6 +479,39 @@
 
   btnResume.addEventListener('click', () => {
     setPaused(false);
+  });
+
+  btnSubmitScore.addEventListener('click', async () => {
+    const validation = validateName(leaderboardInput.value);
+
+    if (!validation.valid){
+      leaderboardError.textContent = validation.errors.join(' ');
+      leaderboardError.classList.remove('hidden');
+      return;
+    }
+
+    btnSubmitScore.disabled = true;
+    btnSubmitScore.textContent = 'Submitting...';
+
+    const result = await submitScore(validation.name, calculateScore());
+
+    if (result.success){
+      beep(980, 0.08, 'square', 0.07);
+      beep(1240, 0.08, 'square', 0.06);
+      hideLeaderboardModal();
+      elSub.textContent = `Welcome to the leaderboard, ${validation.name}!`;
+      await updateLeaderboard();  // Refresh leaderboard display
+    } else {
+      leaderboardError.textContent = 'Failed to save score. Please try again.';
+      leaderboardError.classList.remove('hidden');
+    }
+
+    btnSubmitScore.disabled = false;
+    btnSubmitScore.textContent = 'Submit';
+  });
+
+  btnSkipScore.addEventListener('click', () => {
+    hideLeaderboardModal();
   });
 
   function loop(ts){
@@ -361,6 +552,7 @@
     totalDist += mThisFrame;
 
     if (elScore) elScore.textContent = String(boxesSmashed);
+    if (elScoreTotal) elScoreTotal.textContent = String(calculateScore());
     if (elDist) elDist.textContent = String(Math.floor(totalDist));
     mult = clamp(1 + (streak * 0.05), 1, 3.0);
     if (hasMultEl) elMult.textContent = mult.toFixed(1);
@@ -444,6 +636,7 @@
       if (wasFalling && nearTop && hit(player, stompZone)){
         boxesSmashed++;
         if (elScore) elScore.textContent = String(boxesSmashed);
+        if (elScoreTotal) elScoreTotal.textContent = String(calculateScore());
         obstacles.splice(i,1);
         player.vy = STOMP_BOUNCE_V;
         player.jumpsLeft = Math.max(player.jumpsLeft, 1);
@@ -501,6 +694,7 @@
           coins += gained;
           streak++;
           if (elCoins) elCoins.textContent = String(coins);
+          if (elScoreTotal) elScoreTotal.textContent = String(calculateScore());
           burst(p.x + p.w/2, p.y + p.h/2, 10, '#7af0b7');
           beep(820, 0.04, 'square', 0.05);
         }
@@ -705,9 +899,13 @@
   }
 
   // Boot
-  overlay.classList.remove('hidden');
-  setOverlay('start');
-  startRun();
-  // initial render for start screen
-  render();
+  (async () => {
+    highScore = await fetchHighScore();
+    await updateLeaderboard();
+    overlay.classList.remove('hidden');
+    setOverlay('start');
+    startRun();
+    // initial render for start screen
+    render();
+  })();
 })();

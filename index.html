@@ -3,15 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Pixel Runner</title>
+  <title>No Backsies</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
   <div id="wrap">
-    <canvas id="c" width="360" height="640" aria-label="Pixel Runner"></canvas>
+    <canvas id="c" width="360" height="640" aria-label="No Backsies"></canvas>
+
+    <div id="leaderboardDisplay">
+      <h3>🏆 Top Scores</h3>
+      <div id="leaderboardList"></div>
+    </div>
 
     <div id="hud">
-      <div class="pill">Score <span id="scorePts">0</span></div>
+      <div class="pill">Score <span id="scoreTotal">0</span></div>
+      <div class="pill">Boxes <span id="scorePts">0</span></div>
       <div class="pill"><span id="score">0</span> m</div>
       <div class="pill">★ <span id="coins">0</span></div>
       <button id="btnPause" class="pill btnpill" type="button">Pause</button>
@@ -19,7 +26,7 @@
 
     <div id="overlay" class="hidden">
       <div class="card">
-        <h1>Pixel Runner</h1>
+        <h1>No Backsies</h1>
         <p id="sub">Tap to jump. Double-jump in air. Avoid crates. Collect stars.</p>
         <div class="row">
             <button id="btnStart">Start</button>
@@ -28,6 +35,20 @@
             <button id="btnMute" class="ghost">Sound: On</button>
         </div>
         <div class="small">Tip: Hold a tap to jump a tiny bit higher.</div>
+      </div>
+    </div>
+
+    <div id="leaderboardModal" class="hidden">
+      <div class="card">
+        <h1>🏆 New High Score!</h1>
+        <p>You scored <span id="leaderboardScore">0</span> points!</p>
+        <p>Enter your name to join the leaderboard.</p>
+        <input type="text" id="leaderboardInput" placeholder="Your name (3-5 letters)" maxlength="5" />
+        <p id="leaderboardError" class="error hidden"></p>
+        <div class="row">
+          <button id="btnSubmitScore">Submit</button>
+          <button id="btnSkipScore" class="ghost">Skip</button>
+        </div>
       </div>
     </div>
   </div>

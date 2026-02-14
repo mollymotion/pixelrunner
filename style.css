@@ -83,3 +83,79 @@ button.ghost{
   color:var(--ink);
 }
 .small{ margin-top:10px; color:rgba(238,241,255,.7); font-size:12px; }
+#leaderboardModal{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  background: radial-gradient(900px 600px at 50% 30%, rgba(122,240,183,.12), transparent 60%),
+              rgba(0,0,0,.35);
+}
+#leaderboardInput{
+  width:100%;
+  padding:10px 12px;
+  margin:12px 0;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(31,36,80,.6);
+  color:var(--ink);
+  font-size:16px;
+  font-family: inherit;
+}
+#leaderboardInput::placeholder{
+  color:rgba(238,241,255,.4);
+}
+.error{
+  color:var(--danger);
+  font-size:13px;
+  margin:8px 0;
+}
+#leaderboardDisplay{
+  position:absolute;
+  bottom:35px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(92vw, 420px);
+  background:linear-gradient(to bottom, rgba(31,36,80,.3), rgba(31,36,80,.95));
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:12px;
+  padding:12px;
+  color:var(--ink);
+  z-index:5;
+  max-height:110px;
+  overflow-y:auto;
+}
+#leaderboardDisplay h3{
+  margin:0 0 10px 0;
+  font-size:16px;
+  color:var(--accent);
+}
+#leaderboardList{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  font-size:13px;
+  font-family: monospace;
+}
+.leaderboard-entry{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:6px 10px;
+  background:rgba(0,0,0,.2);
+  border-radius:6px;
+}
+.leaderboard-rank{
+  color:var(--accent);
+  font-weight:bold;
+  min-width:20px;
+}
+.leaderboard-name{
+  flex:1;
+  margin-left:10px;
+}
+.leaderboard-score{
+  color:var(--muted);
+  text-align:right;
+}
