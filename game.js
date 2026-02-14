@@ -445,10 +445,11 @@
       // Tap to start works too (mobile-friendly)
       if (gameOver){
         // retry
-        startRun();
+        resetAll();
         beginRun();
       } else {
         // start new run
+        resetAll();
         beginRun();
       }
       return;
@@ -480,7 +481,7 @@
 
   btnStart.addEventListener('click', () => {
     // Start or retry
-    startRun();
+    resetAll();
     beginRun();
   });
 
@@ -936,7 +937,7 @@
     await updateLeaderboard();
     overlay.classList.remove('hidden');
     setOverlay('start');
-    startRun();
+    resetAll();
     // initial render for start screen
     render();
   })();
