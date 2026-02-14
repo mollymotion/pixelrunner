@@ -11,7 +11,6 @@
   const elDist = document.getElementById('score');   // meters
   const elCoins = document.getElementById('coins');
   const elMult  = document.getElementById('mult');
-  const elLevel = document.getElementById('level');
 
   // Overlay
   const overlay = document.getElementById('overlay');
@@ -89,21 +88,17 @@
   let last = 0;
   let t = 0;
 
-  // Run stats that persist across levels
-  let level = 1;
-  let totalDist = 0;     // total meters across all levels (for bragging, optional)
+  // Run stats
+  let totalDist = 0;     // total meters across the run
   let coins = 0;
   let boxesSmashed = 0;  // score is primarily boxes smashed
   let streak = 0;
   let mult = 1.0;
+  let runTime = 0;       // total time elapsed in run
 
-  // Per-level state
+  // Per-run state
   let speed = BASE_SPEED;
-  let speedMax = BASE_SPEED_MAX;
-  let levelDist = 0;      // meters within current level
-  let levelGoalM = 0;     // finish distance for this level
-  let finish = null;      // finish banner object or null
-  let finishSpawned = false;
+  let speedMax = BASE_SPEED_MAX;  // will scale over time
 
   // input
   let isDown = false;
@@ -111,8 +106,8 @@
   let coyoteTimer = 0;
   let jumpBufferTimer = 0;
 
-  // shield safety (kept)
-  let hasShield = false;
+  // shield system (cumulative, max 4)
+  let shieldCount = 0;
   let invulnTimer = 0;
 
   const player = {
@@ -177,39 +172,31 @@
     // mode: 'start' | 'dead' | 'level'
     overlay.classList.remove('hidden');
     btnStart.classList.toggle('hidden', mode !== 'start' && mode !== 'dead');
-    btnNext.classList.toggle('hidden', mode !== 'level');
-  }
-
-  function computeLevelGoal(lvl){
-    return BASE_LEVEL_DIST_M + (lvl - 1) * LEVEL_DIST_STEP_M;
-  }
-
-  function computeSpeedMax(lvl){
-    return BASE_SPEED_MAX + (lvl - 1) * SPEED_MAX_STEP;
+    btnNext.classList.toggle('hidden', true);  // always hidden in continuous mode
   }
 
   function resetAll(){
     // full reset (new game)
-    level = 1;
     totalDist = 0;
     coins = 0;
     boxesSmashed = 0;
     streak = 0;
     mult = 1.0;
-    hasShield = false;
+    runTime = 0;
+    shieldCount = 0;
     invulnTimer = 0;
-    startLevel(1, true);
+    startRun();
   }
 
-  function startLevel(lvl, fresh){
-    // fresh=true: starting a new game, clear everything.
+  function startRun(){
+    // Start a new continuous run
     running = false;
     gameOver = false;
     betweenLevels = true;
     last = 0;
     t = 0;
 
-    // Clear per-level entities
+    // Clear entities
     obstacles.length = 0;
     pickups.length = 0;
     clouds.length = 0;
@@ -221,43 +208,26 @@
     player.jumpsLeft = 2;
     player.anim = 0;
 
-    // Level state
-    level = lvl;
-    levelDist = 0;
-    levelGoalM = computeLevelGoal(level);
-    finish = null;
-    finishSpawned = false;
-
-    // Difficulty for this level
+    // Run state
     speed = BASE_SPEED;
-    speedMax = computeSpeedMax(level);
+    runTime = 0;
 
     // timers
     coyoteTimer = 0;
     jumpBufferTimer = 0;
 
-    // Keep coins/shield between levels (you can change this easily)
-    if (fresh){
-      coins = 0;
-      hasShield = false;
-      invulnTimer = 0;
-    }
-
-    // clouds
-    for(let i=0;i<6;i++) spawnCloud();
-
     // HUD
-    if (elLevel) elLevel.textContent = String(level);
     if (elScore) elScore.textContent = String(boxesSmashed);
     if (elDist) elDist.textContent = '0';
     if (elCoins) elCoins.textContent = String(coins);
     if (hasMultEl) elMult.textContent = '1.0';
 
+    // clouds
+    for(let i=0;i<6;i++) spawnCloud();
+
     // overlay
-    setOverlay(fresh ? 'start' : 'level');
-    elSub.textContent = fresh
-      ? 'Tap to jump. Double-jump. Stomp crates. Reach the finish banner.'
-      : `Level ${level-1} complete. Ready for Level ${level}?`;
+    setOverlay('start');
+    elSub.textContent = 'Tap to jump. Double-jump. Stomp crates. How far can you go?';
   }
 
   function beginRun(){
@@ -273,17 +243,8 @@
     gameOver = true;
     betweenLevels = true;
     setOverlay('dead');
-    elSub.textContent = `${reason} Tap Start to retry Level ${level}.`;
+    elSub.textContent = `${reason} You made it ${Math.floor(totalDist)}m. Tap Start to try again.`;
     beep(160, 0.12, 'sawtooth', 0.09);
-  }
-
-  function completeLevel(){
-    running = false;
-    betweenLevels = true;
-    setOverlay('level');
-    elSub.textContent = `Level ${level} complete. Tap Next Level.`;
-    beep(980, 0.08, 'square', 0.07);
-    beep(1240, 0.08, 'square', 0.06);
   }
 
   // Input
@@ -313,13 +274,11 @@
     if (betweenLevels){
       // Tap to start works too (mobile-friendly)
       if (gameOver){
-        // retry same level
-        startLevel(level, false);
+        // retry
+        startRun();
         beginRun();
-      } else if (btnNext && !btnNext.classList.contains('hidden')){
-        // Level complete screen: ignore tap here; button handles
       } else {
-        // start screen
+        // start new run
         beginRun();
       }
       return;
@@ -345,14 +304,8 @@
   });
 
   btnStart.addEventListener('click', () => {
-    // Start or retry level
-    startLevel(level, false);
-    beginRun();
-  });
-
-  btnNext.addEventListener('click', () => {
-    // Next level
-    startLevel(level + 1, false);
+    // Start or retry
+    startRun();
     beginRun();
   });
 
@@ -398,16 +351,17 @@
   }
 
   function update(dt){
-    // within-level speed ramp
+    // continuous speed scaling based on time
+    runTime += dt;
+    speedMax = BASE_SPEED_MAX + (runTime * 20);  // speed increases over time
     speed = clamp(speed + dt * SPEED_RAMP_PER_SEC, 0, speedMax);
 
     // meters
     const mThisFrame = (speed * dt) / 18;
-    levelDist += mThisFrame;
     totalDist += mThisFrame;
 
     if (elScore) elScore.textContent = String(boxesSmashed);
-    if (elDist) elDist.textContent = String(Math.floor(levelDist));
+    if (elDist) elDist.textContent = String(Math.floor(totalDist));
     mult = clamp(1 + (streak * 0.05), 1, 3.0);
     if (hasMultEl) elMult.textContent = mult.toFixed(1);
 
@@ -416,26 +370,21 @@
     if (jumpBufferTimer > 0) jumpBufferTimer = Math.max(0, jumpBufferTimer - dt);
     if (invulnTimer > 0) invulnTimer = Math.max(0, invulnTimer - dt);
 
-    // Spawn finish banner near the end
-    maybeSpawnFinish();
+    // Spawn enemies/coins continuously
+    const preFinish = true;
 
-    // Spawn enemies/coins until the player is well past the goal distance
-    // (so they have a fair chance to find and touch the finish banner)
-    const preFinish = levelDist < levelGoalM + 60;
-
-    if (preFinish){
-      // obstacle spawn rate per level (slightly tighter later levels)
-      // but still forgiving
-      if (Math.random() < 0.018 + (level * 0.0015)){
-        spawnObstacle();
+      if (preFinish){
+        // obstacle spawn rate increases slightly with time
+        if (Math.random() < 0.018 + (runTime * 0.0003)){
+          spawnObstacle();
+        }
+        if (Math.random() < 0.035){
+          spawnCoin();
+        }
+        if (shieldCount < 4 && Math.random() < 0.0035){
+          spawnShield();
+        }
       }
-      if (Math.random() < 0.035){
-        spawnCoin();
-      }
-      if (!hasShield && Math.random() < 0.0035){
-        spawnShield();
-      }
-    }
 
     // Clouds
     if (clouds.length < 10 && Math.random() < 0.02) spawnCloud();
@@ -476,23 +425,7 @@
       }
     }
 
-    // Move finish banner and check if player passes it (level end)
-    if (finish){
-      finish.x -= speed * dt;
-      // Level ends when player passes the flag
-      if (player.x > finish.x){
-        completeLevel();
-        return;
-      }
-    }
-
-    // Auto-complete if player gets way past the goal without touching finish
-    if (levelDist > levelGoalM + 150){
-      completeLevel();
-      return;
-    }
-
-    // Obstacles
+    // Continuous run - no finish banners, game continues until player dies\n\n    // Obstacles
     for (let i=obstacles.length-1;i>=0;i--){
       const o = obstacles[i];
       o.x -= speed * dt;
@@ -525,8 +458,8 @@
       if (hit(player, oh)){
         if (invulnTimer > 0) continue;
 
-        if (hasShield){
-          hasShield = false;
+        if (shieldCount > 0){
+          shieldCount--;
           invulnTimer = 0.7;
           obstacles.splice(i,1); // remove the crate that triggered the shield
           burst(player.x + player.w/2, player.y + player.h/2, 18, '#7af0b7');
@@ -558,9 +491,11 @@
         pickups.splice(i,1);
 
         if (p.kind === 'shield'){
-          hasShield = true;
-          burst(p.x + p.w/2, p.y + p.h/2, 16, '#7af0b7');
-          beep(980, 0.06, 'square', 0.05);
+          if (shieldCount < 4) {
+            shieldCount++;
+            burst(p.x + p.w/2, p.y + p.h/2, 16, '#7af0b7');
+            beep(980, 0.06, 'square', 0.05);
+          }
         } else {
           const gained = Math.round(1 * mult);
           coins += gained;
@@ -731,20 +666,23 @@
       }
     }
 
-    // Finish banner (end of level)
-    if (finish) drawFinishBanner(finish);
-
     // Player
     drawPlayer(player);
 
-    // Shield ring indicator
-    if (hasShield){
+    // Shield count indicators
+    if (shieldCount > 0){
+      const shieldRadius = 26 + (shieldCount - 1) * 8;
       ctx.strokeStyle = 'rgba(122,240,183,.75)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc((player.x + player.w/2)|0, (player.y + player.h/2)|0, 26, 0, Math.PI*2);
+      ctx.arc((player.x + player.w/2)|0, (player.y + player.h/2)|0, shieldRadius, 0, Math.PI*2);
       ctx.stroke();
+      ctx.fillStyle = 'rgba(122,240,183,.25)';
+      ctx.font = 'bold 12px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(shieldCount), (player.x + player.w/2)|0, (player.y + player.h/2 + 4)|0);
       ctx.lineWidth = 1;
+      ctx.textAlign = 'start';
     }
 
     // Invuln wash
@@ -763,13 +701,13 @@
     // Hint
     ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
     ctx.fillStyle = 'rgba(238,241,255,.35)';
-    ctx.fillText(`Reach the flag • Level ${level} ends at ~${Math.floor(levelGoalM)}m`, 12, H - 16);
+    ctx.fillText(`Endless run • Distance: ${Math.floor(totalDist)}m • Time: ${(runTime).toFixed(1)}s`, 12, H - 16);
   }
 
   // Boot
   overlay.classList.remove('hidden');
   setOverlay('start');
-  startLevel(1, true);
+  startRun();
   // initial render for start screen
   render();
 })();
