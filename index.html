@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Pixel Runner</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="c" width="360" height="640" aria-label="Pixel Runner"></canvas>
+
+    <div class="pill">Score <span id="scorePts">0</span></div>
+    <div class="pill"><span id="score">0</span> m</div>
+    <div class="pill">★ <span id="coins">0</span></div>
+    <div class="pill">Lvl <span id="level">1</span></div>
+    <button id="btnPause" class="pill btnpill" type="button">Pause</button>
+
+    <div id="overlay" class="hidden">
+      <div class="card">
+        <h1>Pixel Runner</h1>
+        <p id="sub">Tap to jump. Double-jump in air. Avoid crates. Collect stars.</p>
+        <div class="row">
+            <button id="btnStart">Start</button>
+            <button id="btnNext" class="hidden">Next Level</button>
+            <button id="btnResume" class="hidden">Resume</button>
+            <button id="btnMute" class="ghost">Sound: On</button>
+        </div>
+        <div class="small">Tip: Hold a tap to jump a tiny bit higher.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

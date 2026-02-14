@@ -1,0 +1,84 @@
+:root{
+  --bg:#0e1020;
+  --ink:#eef1ff;
+  --muted:#b7bce6;
+  --card:#161a33;
+  --pill:#1f2450;
+  --accent:#7af0b7;
+  --danger:#ff6b7a;
+  --px: pixelated;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+#wrap{ height:100%; display:grid; place-items:center; padding:12px; position:relative; }
+canvas{
+  width:min(96vw, 420px);
+  height:auto;
+  border-radius:18px;
+  background:#0b0d18;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  box-shadow: 0 14px 40px rgba(0,0,0,.45);
+  touch-action: manipulation; /* helps mobile taps */
+}
+#hud{
+  position:absolute;
+  top:14px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:8px;
+  pointer-events:none;
+}
+.pill{
+  background:rgba(31,36,80,.86);
+  border:1px solid rgba(255,255,255,.10);
+  padding:8px 10px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:.2px;
+  color:var(--ink);
+}
+.btnpill{
+  pointer-events:auto;   /* overrides HUD pointer-events:none */
+  cursor:pointer;
+  user-select:none;
+}
+#overlay{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  background: radial-gradient(900px 600px at 50% 30%, rgba(122,240,183,.12), transparent 60%),
+              rgba(0,0,0,.35);
+}
+.hidden{ display:none !important; }
+.card{
+  width:min(92vw, 420px);
+  background:rgba(22,26,51,.92);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:20px;
+  padding:18px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.5);
+}
+h1{ margin:0 0 8px; font-size:26px; }
+p{ margin:0 0 12px; color:var(--muted); line-height:1.35; }
+.row{ display:flex; gap:10px; }
+button{
+  flex:1;
+  padding:12px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background:var(--accent);
+  color:#07110c;
+  font-weight:900;
+  font-size:16px;
+}
+button.ghost{
+  background:transparent;
+  color:var(--ink);
+}
+.small{ margin-top:10px; color:rgba(238,241,255,.7); font-size:12px; }
