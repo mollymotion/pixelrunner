@@ -44,6 +44,8 @@
   // Leaderboard display
   const leaderboardDisplay = document.getElementById('leaderboardDisplay');
   const leaderboardList = document.getElementById('leaderboardList');
+  const btnLeaderboard = document.getElementById('btnLeaderboard');
+  const btnCloseLeaderboard = document.getElementById('btnCloseLeaderboard');
 
   let highScore = 0;  // Highest score achieved so far (session)
 
@@ -306,6 +308,14 @@
     leaderboardModal.classList.add('hidden');
   }
 
+  function showLeaderboardDisplay(){
+    leaderboardDisplay.classList.remove('hidden');
+  }
+
+  function hideLeaderboardDisplay(){
+    leaderboardDisplay.classList.add('hidden');
+  }
+
   async function submitScore(name, score){
     try {
       await supabase.from('leaderboard').insert({
@@ -475,6 +485,15 @@
 
   btnPause.addEventListener('click', () => {
     if (running) setPaused(true);
+  });
+
+  btnLeaderboard.addEventListener('click', async () => {
+    await updateLeaderboard();
+    showLeaderboardDisplay();
+  });
+
+  btnCloseLeaderboard.addEventListener('click', () => {
+    hideLeaderboardDisplay();
   });
 
   btnResume.addEventListener('click', () => {

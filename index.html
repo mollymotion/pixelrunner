@@ -11,17 +11,23 @@
   <div id="wrap">
     <canvas id="c" width="360" height="640" aria-label="No Backsies"></canvas>
 
-    <div id="leaderboardDisplay">
-      <h3>🏆 Top Scores</h3>
-      <div id="leaderboardList"></div>
-    </div>
-
     <div id="hud">
       <div class="pill">Score <span id="scoreTotal">0</span></div>
       <div class="pill">Boxes <span id="scorePts">0</span></div>
       <div class="pill"><span id="score">0</span> m</div>
       <div class="pill">★ <span id="coins">0</span></div>
       <button id="btnPause" class="pill btnpill" type="button">Pause</button>
+      <button id="btnLeaderboard" class="pill btnpill" type="button">🏆</button>
+    </div>
+
+    <div id="leaderboardDisplay" class="hidden">
+      <div class="card">
+        <h1>🏆 Top Scores</h1>
+        <div id="leaderboardList"></div>
+        <div class="row">
+          <button id="btnCloseLeaderboard" class="ghost">Close</button>
+        </div>
+      </div>
     </div>
 
     <div id="overlay" class="hidden">

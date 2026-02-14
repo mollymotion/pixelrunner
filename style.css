@@ -112,24 +112,17 @@ button.ghost{
   margin:8px 0;
 }
 #leaderboardDisplay{
-  position:absolute;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  width:min(92vw, 420px);
-  background:linear-gradient(to bottom, rgba(31,36,80,.3), rgba(31,36,80,.95));
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:12px;
-  padding:12px;
-  color:var(--ink);
-  z-index:5;
-  max-height:110px;
-  overflow-y:auto;
+  position:fixed;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  background: radial-gradient(900px 600px at 50% 30%, rgba(122,240,183,.12), transparent 60%),
+              rgba(0,0,0,.35);
+  z-index:20;
 }
-#leaderboardDisplay h3{
-  margin:0 0 10px 0;
-  font-size:16px;
-  color:var(--accent);
+#leaderboardDisplay h1{
+  margin-bottom:16px;
 }
 #leaderboardList{
   display:flex;
