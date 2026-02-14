@@ -7,6 +7,7 @@
   const H = canvas.height;
 
   // HUD
+  const elScore = document.getElementById('scorePts'); // boxes smashed
   const elDist = document.getElementById('score');   // meters
   const elCoins = document.getElementById('coins');
   const elMult  = document.getElementById('mult');
@@ -92,6 +93,7 @@
   let level = 1;
   let totalDist = 0;     // total meters across all levels (for bragging, optional)
   let coins = 0;
+  let boxesSmashed = 0;  // score is primarily boxes smashed
   let streak = 0;
   let mult = 1.0;
 
@@ -191,6 +193,7 @@
     level = 1;
     totalDist = 0;
     coins = 0;
+    boxesSmashed = 0;
     streak = 0;
     mult = 1.0;
     hasShield = false;
@@ -245,6 +248,7 @@
 
     // HUD
     if (elLevel) elLevel.textContent = String(level);
+    if (elScore) elScore.textContent = String(boxesSmashed);
     if (elDist) elDist.textContent = '0';
     if (elCoins) elCoins.textContent = String(coins);
     if (hasMultEl) elMult.textContent = '1.0';
@@ -402,6 +406,7 @@
     levelDist += mThisFrame;
     totalDist += mThisFrame;
 
+    if (elScore) elScore.textContent = String(boxesSmashed);
     if (elDist) elDist.textContent = String(Math.floor(levelDist));
     mult = clamp(1 + (streak * 0.05), 1, 3.0);
     if (hasMultEl) elMult.textContent = mult.toFixed(1);
@@ -471,11 +476,11 @@
       }
     }
 
-    // Move finish banner and check collision (level end)
+    // Move finish banner and check if player passes it (level end)
     if (finish){
       finish.x -= speed * dt;
-      // Let player "touch" the finish to end level
-      if (hit(player, { x: finish.x, y: finish.y, w: finish.w, h: finish.h })){
+      // Level ends when player passes the flag
+      if (player.x > finish.x){
         completeLevel();
         return;
       }
@@ -504,6 +509,8 @@
       const stompZone = { x: o.x - 6, y: o.y - 4, w: o.w + 12, h: 22 };
 
       if (wasFalling && nearTop && hit(player, stompZone)){
+        boxesSmashed++;
+        if (elScore) elScore.textContent = String(boxesSmashed);
         obstacles.splice(i,1);
         player.vy = STOMP_BOUNCE_V;
         player.jumpsLeft = Math.max(player.jumpsLeft, 1);

@@ -30,6 +30,7 @@ canvas{
   display:flex;
   gap:8px;
   pointer-events:none;
+  z-index:10;
 }
 .pill{
   background:rgba(31,36,80,.86);
