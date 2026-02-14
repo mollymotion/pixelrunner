@@ -113,7 +113,7 @@ button.ghost{
 }
 #leaderboardDisplay{
   position:absolute;
-  bottom:10px;
+  bottom:8px;
   left:50%;
   transform:translateX(-50%);
   width:min(92vw, 420px);
