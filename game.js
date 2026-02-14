@@ -80,7 +80,7 @@
   function clicky(){ beep(520, 0.03, 'square', 0.05); }
 
   // Constants
-  const GROUND_Y = H - 170;
+  const GROUND_Y = H - 110;
   const GRAV = 2050;
   const JUMP_V = -820;
   const HOLD_BOOST = -820;
